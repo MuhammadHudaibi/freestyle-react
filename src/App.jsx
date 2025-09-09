@@ -1,35 +1,73 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+import { lyricsData } from './lyricsData.js';
+import { useTimer } from './useTimer.js';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentLineIndex, setCurrentLineIndex] = useState(-1);
+  const { currentTime, isPlaying, setIsPlaying, resetTimer } = useTimer();
+
+  const handlePlayPause = () => {
+    setIsPlaying(prev => !prev);
+  };
+  
+  const handleReset = () => {
+    resetTimer();
+    setCurrentLineIndex(-1);
+  };
+
+  useEffect(() => {
+    let newIndex = -1;
+    for (let i = lyricsData.length - 1; i >= 0; i--) {
+      if (currentTime >= lyricsData[i].time) {
+        newIndex = i;
+        break;
+      }
+    }
+
+    if (newIndex !== currentLineIndex) {
+      setCurrentLineIndex(newIndex);
+    }
+  }, [currentTime, currentLineIndex]);
+
+  useEffect(() => {
+    const activeLyric = document.querySelector('.lyric-line.active');
+    if (activeLyric) {
+      activeLyric.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [currentLineIndex]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="app-container">
+      <div className="lyrics-container">
+        {currentLineIndex === -1 && (
+            <p className="lyric-line active" style={{ fontStyle: 'italic', opacity: 0.6 }}>
+                Tekan play untuk memulai...
+            </p>
+        )}
+        {lyricsData.map((line, index) => (
+          <p
+            key={index}
+            className={`lyric-line ${index === currentLineIndex ? 'active' : ''}`}
+          >
+            {line.text}
+          </p>
+        ))}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+
+      <div className="controls">
+        <button onClick={handleReset} className="control-btn" title="Reset">
+          ⟲
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+        <button onClick={handlePlayPause} className="play-pause-btn">
+          {isPlaying ? '❚❚' : '►'}
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
